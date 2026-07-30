@@ -5,7 +5,7 @@ description:
 '''
 Get back lost units from those who fell victim to the Time Control mod, or any other causes.
 
-Press the unit button on the top-left of the screen, and lost units will return back to the core.
+Press the unit button on the top-left of the screen, and lost units will return back to your core.
 '''
 version: "1.0"
 minGameVersion: "159.6"
