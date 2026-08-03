@@ -1,7 +1,7 @@
-const spawnEffect = new Effect(120, 500, e => {
+const spawnEffect = new Effect(50, 500, e => {
     e.lifetime = e.rotation;
 
-    Draw.color(Pal.heal);
+    // Draw.color(Pal.heal);
     Lines.stroke(e.fout(Interp.pow5Out) * 4);
     Lines.circle(e.x, e.y, e.fin() * e.rotation * 2);
 });
@@ -23,40 +23,64 @@ Events.on(ClientLoadEvent, cons(e => {
 
     b.clicked(() => {
         if (!Vars.state.isGame()) return;
-        // Action to perform when the button is clicked
         let unitsRetrieved = 0;
-        let p = Vars.player;
-        let core = Vars.state.teams.get(p.team()).core()
-
-        let offset = (Math.random() * 8) - 4;
+        let enemiesRetrieved = 0;
 
         Groups.unit.each(u => {
             if (Double.isNaN(u.x) || Double.isNaN(u.y)) {
-                u.remove();
-                Time.run(5, () => {
-                    UnitTypes[u.type].spawn(p.team(), core.x + offset, core.y + offset);
-                })
+                let team = u.team;
+                let spawnPoint = Vars.spawner.getFirstSpawn();
+                let isSpawner = spawnPoint !== null;
+                let isPlayerTeam = team === Vars.player.team();
 
-                unitsRetrieved++;
+                if ((spawnPoint === null) || isPlayerTeam) {
+                    spawnPoint = Vars.state.teams.get(team).core();
+                    isSpawner = false;
+                }
+
+                u.remove();
+                if (spawnPoint) { // units are removed when theres nothing to spawn them at
+                    let spawnX = (isSpawner) ? spawnPoint.worldx() : spawnPoint.x;
+                    let spawnY = (isSpawner) ? spawnPoint.worldy() : spawnPoint.y;
+
+                    Time.run(5, () => {
+                        UnitTypes[u.type].spawn(team, spawnX, spawnY);
+                        spawnEffect.at(spawnX, spawnY, 100, team.color);
+                    })
+
+                    if (isPlayerTeam) {
+                        unitsRetrieved++;
+                    } else {
+                        enemiesRetrieved++;
+                    }
+                }
             }
         })
-
-        if (unitsRetrieved > 0) {
-            spawnEffect.at(core.x, core.y, 100);
-        }
-        Vars.ui.hudfrag.showToast(Icon.units, (unitsRetrieved > 0) ? "Retreived " + unitsRetrieved + " unit" + ((unitsRetrieved > 1) ? "s" : "") + "!" : "All units are here!");
+        Vars.ui.hudfrag.showToast(Icon.units, 
+            (unitsRetrieved <= 0 && enemiesRetrieved <= 0) ? 
+            "[yellow]Every unit is here!" :
+            "[green]Units retrieved: []" + unitsRetrieved + "\n[red]Enemies retrieved: []" + enemiesRetrieved
+        );
     })
 
     t.setFillParent(true);
-    t.align(Align.topLeft);
+    t.align(Align.bottomLeft);
     t.top().left();
     t.add(b).size(60, 60);
 
     t.pack();
-    t.marginTop(Scl.scl(84));
-    t.marginLeft(Scl.scl(-4))
 
-    // Add the table to the HUD
-    hudGroup.addChild(t)
+    let uiTopLeft = Vars.ui.hudGroup.find("overlaymarker").find("waves/editor").find("waves");
+
+    t.marginTop(uiTopLeft.getPrefHeight());
+    t.marginLeft(-4);
+
+    uiTopLeft.update(() => {
+        if (t.getMarginTop() == uiTopLeft.getPrefHeight()) return;
+
+        t.marginTop(uiTopLeft.getPrefHeight());
+        t.pack();
+    })
+
+    hudGroup.addChild(t);
 }));
-
