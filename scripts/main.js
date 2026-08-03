@@ -53,7 +53,8 @@ Events.on(ClientLoadEvent, cons(e => {
     t.add(b).size(60, 60);
 
     t.pack();
-    t.moveBy(Scl.scl(-4), Scl.scl(-84));
+    t.marginTop(Scl.scl(84));
+    t.marginLeft(Scl.scl(-4))
 
     // Add the table to the HUD
     hudGroup.addChild(t)
